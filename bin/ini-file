@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+    Filename : ini-file
+    Date: 10.03.2020 08:37
+    Project: ini-file
+    AUTHOR : Sergey Utkin
+    
+    Copyright 2020 Sergey Utkin utkins01@gmail.com
+
+                          GNU GENERAL PUBLIC LICENSE
+                          Version 3, 29 June 2007
+
+    Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
+    Everyone is permitted to copy and distribute verbatim copies
+    of this license document, but changing it is not allowed.
+    http://www.gnu.org/licenses/gpl-3.0.txt
+
+   A small utility for get value from .ini files
+
+"""
+
+import sys
+import argparse
+import configparser
+
+__version__ = "1.0.0"
+__author__ = "Sergey V. Utkin"
+__email__ = "utkins01@gmail.com"
+__license__ = "GPLv3"
+__copyright__ = "Copyright 2020, Sergey V. Utkin"
+
+
+def get_parse_args():
+    parser = argparse.ArgumentParser(
+        description="A small utility for get value from .ini files",
+        prog="ini-file",
+        epilog="mailto: {email}, {copyright}".format(
+            copyright=__copyright__,
+            email=__email__
+        )
+    )
+    parser.add_argument('--version', action='version', version='Version: {version}'.format(version=__version__))
+    parser.add_argument('--section', action='store', help='File section')
+    parser.add_argument('--key', action='store', help='Key')
+    parser.add_argument('--sep', action='store', default='=',
+                        help='string inserted between values, default a "=" (equally).')
+    parser.add_argument('file', action='store', nargs='+', help='.ini file')
+    return parser.parse_args()
+
+
+class IniFile:
+    path = None
+    section = None
+    key = None
+
+    def __init__(self, path, section, key):
+        self.path = path
+        self.section = section
+        self.key = key
+
+        self.ini_file = configparser.ConfigParser(allow_no_value=True)
+        try:
+            self.ini_file.read(self.path)
+        except configparser.MissingSectionHeaderError:
+            print('Error format file: {}'.format(self.path))
+            sys.exit(1)
+
+    def print(self):
+        if self.section and self.key:
+            try:
+                print(
+                    self.ini_file[self.section][self.key] if self.ini_file[self.section][self.key] else self.key
+                )
+            except KeyError:
+                pass
+        elif self.section:
+            try:
+                for key in self.ini_file[self.section]:
+                    print(key, self.ini_file[self.section][key], sep=args.sep)
+            except KeyError:
+                pass
+        elif self.key:
+            for section in self.ini_file.sections():
+                try:
+                    print(
+                        self.ini_file[section][self.key] if self.ini_file[section][self.key] else self.key
+                    )
+                except KeyError:
+                    pass
+        else:
+            for section in self.ini_file.sections():
+                print('[{}]'.format(section))
+                for key in self.ini_file[section]:
+                    if self.ini_file[section][key]:
+                        print(key, self.ini_file[section][key], sep=args.sep)
+                    else:
+                        print(key)
+                print()
+
+    def __repr__(self):
+        return "IniFile({0})".format(self.__dict__)
+
+
+args = get_parse_args()
+
+for file in args.file:
+    IniFile(file, args.section, args.key).print()
+
+sys.exit(0)
